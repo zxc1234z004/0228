@@ -1793,6 +1793,7 @@
             if (cfg && reflection.length < cfg.minChars) return toast(`字數不足 ${cfg.minChars} 字唷！`, true);
 
             let allChoicesText = "";
+            let answersArr = [];
             document.querySelectorAll('.hw-q-block').forEach((block, idx) => {
                 const qText = block.getAttribute('data-q-text');
                 const qType = block.getAttribute('data-q-type') || 'checkbox';
@@ -1804,6 +1805,7 @@
                     answer = Array.from(block.querySelectorAll('input:checked')).map(el => el.value).join(', ');
                 }
 
+                answersArr.push({ question: qText, answer: answer || '未作答' });
                 if (answer) allChoicesText += `\n[${qText}] ${answer}`;
             });
 
@@ -1819,7 +1821,8 @@
                         name: currentUser.name,
                         topic: topic,
                         reflection: reflection + (allChoicesText ? "\n\n--- 勾選題回報 ---" + allChoicesText : ""),
-                        url: url
+                        url: url,
+                        answersJson: JSON.stringify(answersArr)
                     })
                 });
                 const r = await res.json();
