@@ -907,6 +907,19 @@
         </div>
     </div>
 
+    <div id="hw-detail-modal" class="modal" onclick="closeHomeworkDetailModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="hw-detail-title" class="text-xl font-black mb-6 text-slate-800 border-b pb-4">作業繳交紀錄</h3>
+            <div id="hw-detail-time" class="text-xs text-slate-400 font-bold mb-4 tracking-widest"></div>
+            <div id="hw-detail-body"
+                class="text-sm text-slate-700 font-medium whitespace-pre-wrap leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100 min-h-[150px] max-h-[60vh] overflow-y-auto">
+            </div>
+            <div id="hw-detail-links" class="mt-4 flex flex-wrap gap-2"></div>
+            <button onclick="closeHomeworkDetailModal()"
+                class="w-full py-4 mt-8 bg-slate-100 rounded-2xl font-black text-slate-500">關閉視窗</button>
+        </div>
+    </div>
+
     <div id="proxy-sign-modal" class="modal" onclick="closeProxyModal()">
         <div class="modal-content !max-w-md" onclick="event.stopPropagation()">
             <h3 class="text-xl font-black mb-6 text-slate-800">手動調整出席</h3>
@@ -976,7 +989,7 @@
 
         let currentUser = null, teamsData = {}, historyData = [], cachedAnnouncements = [], cachedSignedUsers = [], proxyTarget = null, bonusTarget = null;
         let currentQuizOpenStatus = false, quizData = [], activeRowForUpload = null;
-        let checkinZones = [], cachedHomeworkConfig = [], cachedHomeworkSubmissions = [];
+        let checkinZones = [], cachedHomeworkConfig = [], cachedHomeworkSubmissions = [], hwHistoryData = [];
 
         // --- 核心工具 ---
         function parseToTaipeiDate(val) {
@@ -1933,15 +1946,16 @@
                 const hwRes = await fetch(`${APPS_SCRIPT_URL}?action=getUserHomeworkHistory&name=${encodeURIComponent(currentUser.name)}&group=${encodeURIComponent(currentUser.group)}`);
                 const hwR = await hwRes.json();
                 if (hwR.success && hwR.data.length) {
+                    hwHistoryData = hwR.data;
                     hwList.innerHTML = hwR.data.map((hw, i) => {
-                        let linkHtml = hw.url ? `<a href="${hw.url}" target="_blank" class="text-[10px] mt-2 inline-block text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md font-bold hover:bg-indigo-100 decoration-none">📄 附件/雲端參考</a>` : '';
+                        let linkHtml = hw.url ? `<span class="text-[10px] mt-2 inline-block text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md font-bold group-hover:bg-indigo-100 decoration-none">📄 附有連結/附件</span>` : '';
                         return `
-                        <div class="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm">
+                        <div class="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all group" onclick="showHomeworkDetail(${i})">
                             <div class="flex justify-between items-start mb-2">
-                                <div class="font-black text-indigo-700 text-sm">${hw.topic}</div>
+                                <div class="font-black text-indigo-700 text-sm group-hover:text-indigo-800">${hw.topic}</div>
                                 <div class="text-[10px] text-slate-400 font-black tracking-widest">${hw.time}</div>
                             </div>
-                            <p class="text-xs text-slate-600 font-medium whitespace-pre-line leading-relaxed line-clamp-3">${hw.reflection}</p>
+                            <p class="text-xs text-slate-600 font-medium whitespace-pre-line leading-relaxed line-clamp-2">${hw.reflection}</p>
                             ${linkHtml}
                         </div>`;
                     }).join('');
@@ -1965,6 +1979,22 @@
         }
 
         function closeDetailModal() { document.getElementById('detail-modal').style.display = 'none'; }
+
+        function showHomeworkDetail(idx) {
+            const hw = hwHistoryData[idx]; if (!hw) return;
+            document.getElementById('hw-detail-title').innerText = `作業紀錄 - ${hw.topic}`;
+            document.getElementById('hw-detail-time').innerText = `繳交時間：${hw.time}`;
+            document.getElementById('hw-detail-body').innerText = hw.reflection;
+            const linksContainer = document.getElementById('hw-detail-links');
+            if (hw.url) {
+                linksContainer.innerHTML = `<a href="${hw.url}" target="_blank" class="text-xs bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-bold hover:bg-indigo-100 transition-all">📄 開啟附件或雲端檔案</a>`;
+            } else {
+                linksContainer.innerHTML = '';
+            }
+            document.getElementById('hw-detail-modal').style.display = 'flex';
+        }
+
+        function closeHomeworkDetailModal() { document.getElementById('hw-detail-modal').style.display = 'none'; }
 
         function setupImgTransfer() {
             const tI = document.getElementById('inputToken'), rI = document.getElementById('inputRepo');
