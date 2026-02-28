@@ -1788,7 +1788,11 @@
                     })
                 });
                 const r = await res.json();
-                if (r.success) { toast("繳交成功！"); switchView('bulletin'); } else toast(r.error || "提交失敗", true);
+                if (r.success) {
+                    const timeStr = r.time || new Date().toLocaleString('zh-TW');
+                    toast(`繳交成功！時間：${timeStr}`, false, true);
+                    switchView('bulletin');
+                } else toast(r.error || "提交失敗", true);
             } catch (e) { toast("連線異常", true); } finally { btn.disabled = false; }
         }
 
