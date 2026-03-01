@@ -1395,6 +1395,11 @@
                 const attendanceResult = await attendanceRes.json();
                 const homeworkConfigResult = await homeworkConfigRes.json();
 
+                if (!attendanceResult.success) {
+                    console.error("Attendance API Error:", attendanceResult);
+                    toast("讀取點名紀錄失敗: " + (attendanceResult.error || "未知錯誤"), true);
+                }
+
                 cachedSignedUsers = attendanceResult.data || [];
 
                 const filterContainer = document.getElementById('admin-group-filter-container');
@@ -1418,7 +1423,8 @@
 
                 applyFilters();
             } catch (e) {
-                toast("管理資料載入失敗", true);
+                console.error("Dashboard Load Error:", e);
+                toast("管理資料連線失敗: " + e.message, true);
             }
         }
 
