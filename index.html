@@ -1176,6 +1176,7 @@
                 checkAttendance();
                 checkLocationPermission();
             }
+            if (viewName === 'quiz' && currentUser) loadQuizConfigs();
             if (viewName === 'results' && currentUser) loadHistoryData();
             if (viewName === 'admin' && currentUser) loadAdminDashboard();
             if (viewName === 'questions' && currentUser) loadQuestionsView();
