@@ -994,8 +994,17 @@
         // --- 核心工具 ---
         function parseToTaipeiDate(val) {
             if (!val) return null;
-            const cleanVal = val.toString().replace(/\//g, '-').replace(' ', 'T');
-            return new Date(cleanVal + (cleanVal.includes('+') ? '' : '+08:00'));
+            let str = val.toString().trim();
+            // Google Sheets returns UTC timestamp like 2026-03-01T01:44:00.000Z
+            // Or UI submits "2026-03-01 09:44"
+            let basicMatch = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?(\.\d+)?$/);
+            if (basicMatch) {
+                return new Date(`${basicMatch[1]}-${basicMatch[2].padStart(2, '0')}-${basicMatch[3].padStart(2, '0')}T${basicMatch[4].padStart(2, '0')}:${basicMatch[5].padStart(2, '0')}:${basicMatch[6] ? basicMatch[6].padStart(2, '0') : '00'}+08:00`);
+            }
+            let parsed = new Date(str);
+            if (!isNaN(parsed.getTime())) return parsed;
+            let cleanVal = str.replace(/\//g, '-').replace(' ', 'T');
+            return new Date(cleanVal + (cleanVal.match(/[A-Za-z]|[+-]\d{2}/) ? '' : '+08:00'));
         }
 
         function getBatchFormattedDate() {
@@ -1857,10 +1866,17 @@
                 if (driveInput) driveInput.value = driveFolder.start;
 
                 const sConf = config['隨堂'] || { start: '', end: '' };
-                const format = (v) => { if (!v) return ''; let d = v.toString().trim().replace(/\//g, '-').replace(' ', 'T'); return d.substring(0, 16); };
+                const formatForUI = (v) => {
+                    let d = parseToTaipeiDate(v);
+                    if (!d || isNaN(d.getTime())) return v ? v.toString().substring(0, 16).replace(' ', 'T') : '';
+                    let localTimeMs = d.getTime() + (d.getTimezoneOffset() * 60000) + (8 * 3600000);
+                    let tpe = new Date(localTimeMs);
+                    const pad = n => String(n).padStart(2, '0');
+                    return `${tpe.getFullYear()}-${pad(tpe.getMonth() + 1)}-${pad(tpe.getDate())}T${pad(tpe.getHours())}:${pad(tpe.getMinutes())}`;
+                };
                 const sI = document.getElementById('unified-quiz-start'), eI = document.getElementById('unified-quiz-end');
-                if (sI) sI.value = format(sConf.start);
-                if (eI) eI.value = format(sConf.end);
+                if (sI) sI.value = formatForUI(sConf.start);
+                if (eI) eI.value = formatForUI(sConf.end);
 
                 const now = new Date(), st = parseToTaipeiDate(sConf.start), et = parseToTaipeiDate(sConf.end);
                 currentQuizOpenStatus = (st && et && now >= st && now <= et);
