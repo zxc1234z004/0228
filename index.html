@@ -2125,6 +2125,7 @@
 
         async function processFileSelection(event) {
             const file = event.target.files[0]; if (!file || !activeRowForUpload) return;
+            if (file.size > MAX_FILE_SIZE) return toast("檔案過大，請勿超過 20MB 限制", true);
             toast(`上傳中...`); const reader = new FileReader(); reader.onload = async function (e) {
                 try {
                     const res = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'uploadFile', fileName: file.name, mimeType: file.type, base64Data: e.target.result.split(',')[1] }) });
